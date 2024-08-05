@@ -621,23 +621,23 @@ module Wice
         :param_name    => "#{grid.name}[page]",
         :params        => extra_request_parameters,
         :inner_window  => 4,
-        :outer_window  => 2
+        :outer_window  => 2,
+        :row_count => grid.resultset.length
       ) +
         (' <div class="pagination_status">' + html + '</div>').html_safe
     end
 
 
-    def show_all_link(collection_total_entries, parameters, grid_name) #:nodoc:
+    def show_all_link(parameters, grid_name) #:nodoc:
 
       message = NlMessage['all_queries_warning']
-      confirmation = collection_total_entries > Defaults::START_SHOWING_WARNING_FROM ? message : nil
 
       html = content_tag(:a, NlMessage['show_all_records_label'],
         :href=>"#",
         :title => NlMessage['show_all_records_tooltip'],
         :class => 'wg-show-all-link',
         'data-grid-state' => parameters.to_json,
-        'data-confim-message' => confirmation
+        'data-confim-message' => message
       )
 
       [html, '']
@@ -682,12 +682,16 @@ module Wice
         end
 
       else
-        collection_total_entries = collection.total_count
+        class << collection
+          def total_pages
+            2
+          end
+        end
         current_page = grid.ar_options[:page].to_i
         per_page = grid.ar_options[:per_page].to_i
 
         first = collection.offset_value + 1
-        last = collection.last_page? ? collection.total_count : collection.offset_value + collection.limit_value
+        last = collection.offset_value + collection.length
 
         num_pages = collection.num_pages
       end
@@ -698,17 +702,13 @@ module Wice
       html = if (num_pages < 2 && collection.length == 0)
         '0'
       else
-        parameters << ["#{grid.name}[pp]", collection_total_entries]
+        parameters << ["#{grid.name}[pp]"]
 
-        show_all_records_link = allow_showing_all_records && collection_total_entries > collection.length
+        show_all_records_link = allow_showing_all_records
 
-        if show_all_records_link && limit = Wice::ConfigurationProvider.value_for(:HIDE_ALL_LINK_FROM, strict: false)
-          show_all_records_link = limit > collection_total_entries
-        end
-
-        "#{first}-#{last} / #{collection_total_entries} " +
+        "#{first}-#{last} " +
           if show_all_records_link
-            res, js = show_all_link(collection_total_entries, parameters, grid.name)
+            res, js = show_all_link(parameters, grid.name)
             res
           else
             ''

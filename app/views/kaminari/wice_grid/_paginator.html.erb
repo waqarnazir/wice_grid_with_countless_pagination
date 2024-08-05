@@ -4,16 +4,10 @@
       <% unless current_page.first? %>
         <%= prev_page_tag %>
       <% end %>
-      <% each_page do |page| %>
-        <% if page.left_outer? || page.right_outer? || page.inside_window? %>
-          <%= page_tag page %>
-        <% elsif !page.was_truncated? %>
-          <%= gap_tag %>
-        <% end %>
-      <% end %>
-      <% unless current_page.last? %>
+      <%= page_tag current_page%>
+      <% if @options[:row_count] == @options[:per_page] %>
         <%= next_page_tag %>
-      <% end %>
+      <%end%>
     </ul>
   </div>
 <% end %>
